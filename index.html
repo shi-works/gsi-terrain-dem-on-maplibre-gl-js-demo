@@ -1,0 +1,81 @@
+<html>
+
+<head>
+    <title>地理院標高タイルテスト</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src='https://unpkg.com/maplibre-gl@3.1.0/dist/maplibre-gl.js'></script>
+    <link href='https://unpkg.com/maplibre-gl@3.1.0/dist/maplibre-gl.css' rel='stylesheet' />
+    <script type="module" src="maplibre-gl-gsi-terrain-fast-png.js"></script>
+    <style>
+        body {
+            margin: 0;
+        }
+
+        #map {
+            height: 100%;
+            width: 100%;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="map"></div>
+    <script type="text/javascript">
+        const map = new maplibregl.Map({
+            container: 'map',
+            zoom: 10,
+            center: [140.00, 36.65],
+            pitch: 52,
+            hash: true,
+            style: {
+                version: 8,
+                sources: {
+                    GSI_Photo: {
+                        type: 'raster',
+                        tiles: ['https://cyberjapandata.gsi.go.jp/xyz/seamlessphoto/{z}/{x}/{y}.jpg',],
+                        tileSize: 256,
+                        maxzoom: 24
+                    },
+
+                    gsidem: {
+                        type: 'raster-dem',
+                        tiles: ['gsidem://https://cyberjapandata.gsi.go.jp/xyz/dem_png/{z}/{x}/{y}.png',],
+                        tileSize: 256,
+                        maxzoom: 14,
+                    },
+                },
+                layers: [
+                    {
+                        id: 'GSI_Photo',
+                        type: 'raster',
+                        source: 'GSI_Photo'
+                    },
+                ],
+                terrain: {
+                    source: 'gsidem',
+                    exaggeration: 1
+                }
+            },
+            maxZoom: 18,
+            maxPitch: 85
+        });
+
+        map.addControl(
+            new maplibregl.NavigationControl({
+                visualizePitch: true,
+                showZoom: false,
+                showCompass: true
+            })
+        );
+
+        map.addControl(
+            new maplibregl.TerrainControl({
+                source: 'gsidem',
+                exaggeration: 1 // 標高を強調する倍率
+            })
+        );
+    </script>
+</body>
+
+</html>
