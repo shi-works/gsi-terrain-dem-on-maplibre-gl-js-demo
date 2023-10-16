@@ -1,11 +1,12 @@
 <html>
 
 <head>
-    <title>地理院標高タイルテスト</title>
+    <title>国土地理院 標高タイル（DEM10B）</title>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script src='https://unpkg.com/maplibre-gl@3.1.0/dist/maplibre-gl.js'></script>
-    <link href='https://unpkg.com/maplibre-gl@3.1.0/dist/maplibre-gl.css' rel='stylesheet' />
+    <script src='https://unpkg.com/maplibre-gl@3.4.0/dist/maplibre-gl.js'></script>
+    <link href='https://unpkg.com/maplibre-gl@3.4.0/dist/maplibre-gl.css' rel='stylesheet' />
+    <script src="https://unpkg.com/pmtiles@2.10.0/dist/index.js"></script>
     <script type="module" src="maplibre-gl-gsi-terrain-fast-png.js"></script>
     <style>
         body {
@@ -16,65 +17,165 @@
             height: 100%;
             width: 100%;
         }
+
+        .map-overlay {
+            font: bold 12px/20px 'Helvetica Neue', Arial, Helvetica, sans-serif;
+            position: absolute;
+            width: 170px;
+            bottom: 20px;
+            left: 0;
+            padding: 10px;
+        }
+
+        .map-overlay .map-overlay-inner {
+            background-color: #fff;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+            border-radius: 3px;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+
+        .map-overlay label {
+            display: block;
+            margin: 0 0 0px;
+            font-size: 12px;
+            top: 100px;
+            left: 10px;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .map-overlay input {
+            background-color: transparent;
+            display: inline-block;
+            width: 100%;
+            position: relative;
+            margin: 0;
+            cursor: ew-resize;
+        }
     </style>
 </head>
 
 <body>
     <div id="map"></div>
+    <div class="map-overlay top">
+        <div class="map-overlay-inner">
+            <label>陰影起伏図 不透明度: <span id="hillshade-slider-opacity-value">50%</span></label>
+            <input id="hillshade-slider-opacity" type="range" min="0" max="100" step="1" value="50">
+        </div>
+    </div>
+
     <script type="text/javascript">
+        // protocolの設定（最適化ベクトルタイル読み込み用）
+        let protocol = new pmtiles.Protocol();
+        maplibregl.addProtocol("pmtiles", protocol.tile);
+
+        // マップの初期化
         const map = new maplibregl.Map({
             container: 'map',
-            zoom: 10,
-            center: [140.00, 36.65],
-            pitch: 52,
+            style: 'std.json',　// 最適化ベクトルタイル（PMTiles）
+            zoom: 14,
+            minZoom: 1,
+            maxZoom: 23,
+            pitch: 72,
+            bearing: 45,
+            maxPitch: 85,
+            center: [138.73552, 35.34229],
             hash: true,
-            style: {
-                version: 8,
-                sources: {
-                    GSI_Photo: {
-                        type: 'raster',
-                        tiles: ['https://cyberjapandata.gsi.go.jp/xyz/seamlessphoto/{z}/{x}/{y}.jpg',],
-                        tileSize: 256,
-                        maxzoom: 24
-                    },
-
-                    gsidem: {
-                        type: 'raster-dem',
-                        tiles: ['gsidem://https://cyberjapandata.gsi.go.jp/xyz/dem_png/{z}/{x}/{y}.png',],
-                        tileSize: 256,
-                        maxzoom: 14,
-                    },
-                },
-                layers: [
-                    {
-                        id: 'GSI_Photo',
-                        type: 'raster',
-                        source: 'GSI_Photo'
-                    },
-                ],
-                terrain: {
-                    source: 'gsidem',
-                    exaggeration: 1
-                }
-            },
-            maxZoom: 18,
-            maxPitch: 85
+            attributionControl: false,
         });
 
+        // ズーム・回転
         map.addControl(
             new maplibregl.NavigationControl({
                 visualizePitch: true,
-                showZoom: false,
+                showZoom: true,
                 showCompass: true
             })
         );
 
+        // フルスクリーンモードのオンオフ
+        map.addControl(new maplibregl.FullscreenControl());
+
+        // 現在位置表示
+        map.addControl(new maplibregl.GeolocateControl({
+            positionOptions: {
+                enableHighAccuracy: false
+            },
+            fitBoundsOptions: { maxZoom: 18 },
+            trackUserLocation: true,
+            showUserLocation: true
+        }));
+
+        // スケール表示
+        map.addControl(new maplibregl.ScaleControl({
+            maxWidth: 200,
+            unit: 'metric'
+        }));
+
+        // Attributionを折りたたみ表示
+        map.addControl(new maplibregl.AttributionControl({
+            compact: true,
+            customAttribution: '（<a href="https://twitter.com/shi__works" target="_blank">Twitter</a> | <a href="https://github.com/shi-works/Haga-Utsunomiya-LRT-on-MapLibre-GL-JS" target="_blank">Github</a>） '
+        }));
+
+        // 3D地形コントロール表示
         map.addControl(
             new maplibregl.TerrainControl({
                 source: 'gsidem',
-                exaggeration: 1
+                exaggeration: 1 // 標高を強調する倍率
             })
         );
+
+        map.on('load', () => {
+            // 標高タイルソース
+            map.addSource("gsidem", {
+                type: 'raster-dem',
+                tiles: [
+                    'gsidem://https://cyberjapandata.gsi.go.jp/xyz/dem_png/{z}/{x}/{y}.png',
+                ],
+                attribution: '<a href="https://maps.gsi.go.jp/development/ichiran.html#dem" target="_blank">地理院タイル(標高タイル)</a>',
+                tileSize: 256
+            });
+
+            // 標高タイルセット
+            map.setTerrain({ 'source': 'gsidem', 'exaggeration': 1 });
+
+            // 陰影起伏図ソース
+            map.addSource("hillshade", {
+                type: 'raster',
+                tiles: [
+                    'https://cyberjapandata.gsi.go.jp/xyz/hillshademap/{z}/{x}/{y}.png',
+                ],
+                attribution: '<a href="https://maps.gsi.go.jp/development/ichiran.html#hillshademap" target="_blank">地理院タイル(陰影起伏図)</a>',
+                tileSize: 256
+            });
+
+            // 陰影起伏図レイヤ
+            map.addLayer({
+                id: 'hillshade-tiles',
+                type: 'raster',
+                source: 'hillshade',
+                minzoom: 2,
+                maxzoom: 18,
+                paint: {
+                    'raster-opacity': 0.5
+                }
+            });
+
+            // スライダーで陰影起伏図の不透明度を制御
+            const hillshadesliderOpactiy = document.getElementById('hillshade-slider-opacity');
+            const hillshadesliderOpactiyValue = document.getElementById('hillshade-slider-opacity-value');
+
+            hillshadesliderOpactiy.addEventListener('input', (e) => {
+                map.setPaintProperty(
+                    'hillshade-tiles',
+                    'raster-opacity',
+                    parseInt(e.target.value, 10) / 100
+                );
+                hillshadesliderOpactiyValue.textContent = e.target.value + '%';
+            });
+        });
     </script>
 </body>
 
