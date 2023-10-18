@@ -3,7 +3,7 @@
 https://shi-works.github.io/gsi-terrain-dem-on-maplibre-gl-js-demo/
 
 ## 標高タイルをTerrainRGBに変換するモジュールの使い方
-index.htmlのheadに変換モジュールの読み込みを記述
+- index.htmlのheadに変換モジュールの読み込みを記述します。
 ```
 <html>
 
