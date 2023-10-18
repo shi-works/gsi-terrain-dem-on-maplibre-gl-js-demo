@@ -17,7 +17,7 @@ https://shi-works.github.io/gsi-terrain-dem-on-maplibre-gl-js-demo/
     <script type="module" src="maplibre-gl-gsi-terrain-fast-png.js"></script>
 ```
 - index.htmlのmap.addSource内のtilesを下記のとおりにします。
-- 'gsidem://https://cyberjapandata.gsi.go.jp/xyz/dem_png/{z}/{x}/{y}.png'とすることで、標高タイルがTerrainRGBに変換されます。
+- `gsidem://https://cyberjapandata.gsi.go.jp/xyz/dem_png/{z}/{x}/{y}.png`とすることで、標高タイルがTerrainRGBに変換されます。
 ```
             map.addSource("gsidem", {
                 type: 'raster-dem',
