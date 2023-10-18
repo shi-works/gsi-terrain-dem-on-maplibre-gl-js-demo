@@ -14,5 +14,5 @@ index.htmlのheadに変換モジュールの読み込みを記述
     <script src='./lib/maplibre-gl@2.4.0/maplibre-gl.js'></script>
     <link href='./lib/maplibre-gl@2.4.0/maplibre-gl.css' rel='stylesheet' />
     <script src='./lib/pmtiles@2.10.0/index.js'></script>
-    __<script type="module" src="maplibre-gl-gsi-terrain-fast-png.js"></script>__
+    <script type="module" src="maplibre-gl-gsi-terrain-fast-png.js"></script>
 ```
